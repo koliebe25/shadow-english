@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>쉐도잉 연습실</title>
+<style>
+:root{--navy:#4A5899;--navy-d:#353f73;--coral:#FF6B6B;--bg:#f5f6fb;--card:#fff;--line:#dfe2ef;--text:#1f2440;--mute:#6b7190}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+header{background:var(--navy);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+header h1{font-size:18px;margin:0}
+header a{color:#fff;font-size:13px;opacity:.9}
+main{max-width:1200px;margin:0 auto;padding:12px;display:grid;gap:12px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--navy)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;min-height:40px}
+button:hover{border-color:var(--navy)}
+button.primary{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:700}
+button.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
+.row label{font-size:13px;color:var(--mute)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.videoWrap{position:relative;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:16/9}
+video{width:100%;height:100%;display:block;background:#000}
+#ytBox{position:absolute;inset:0;display:none}#ytBox iframe{width:100%;height:100%;border:0}
+#ytUrl{flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:8px;min-height:40px}
+#mask{position:absolute;left:0;right:0;background:#111;display:none;pointer-events:none;align-items:center;justify-content:center;color:#777;font-size:12px}
+#empty{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;color:#fff;text-align:center;padding:16px;background:linear-gradient(135deg,var(--navy-d),#222)}
+#now{min-height:120px;text-align:center;padding:14px 8px}
+#nowSrc{font-size:clamp(22px,4.2vw,34px);font-weight:700;line-height:1.3;word-break:keep-all}
+#nowKo{font-size:clamp(16px,2.6vw,21px);color:var(--navy);margin-top:8px;word-break:keep-all}
+#nowNote{font-size:14px;color:var(--mute);margin-top:10px;white-space:pre-wrap;text-align:left;background:var(--bg);border-radius:8px;padding:8px 10px}
+.hiddenTxt{color:#b3b7cc;font-weight:400;font-size:16px}
+#phases{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.ph{padding:6px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13px;color:var(--mute)}
+.ph.act{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:700}
+#bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:var(--coral)}
+#status{text-align:center;font-size:13px;color:var(--mute);min-height:20px;margin-top:4px}
+#list{max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.item{text-align:left;width:100%;display:block;padding:8px 10px}
+.item.cur{border-color:var(--coral);box-shadow:0 0 0 2px #ff6b6b33}
+.item small{color:var(--mute);display:block}
+.item .s{font-weight:600}
+.item .k{color:var(--navy);font-size:14px}
+.notice{font-size:12.5px;color:var(--mute);background:#fff7e6;border:1px solid #ffe2a8;border-radius:8px;padding:8px 10px;margin-top:8px}
+#editor{display:none}
+#editor textarea,#editor input[type=number]{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px}
+#editor textarea{min-height:52px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;z-index:9}
+#toast.show{opacity:1}
+.recDot{color:var(--coral);font-weight:700}
+input[type=range]{accent-color:var(--coral)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎧 쉐도잉 연습실 <span style="font-weight:400;font-size:13px;opacity:.85">듣고 · 따라 말하고 · 녹음해서 비교</span></h1>
+  <a href="https://www.youtube.com/watch?v=9KBIddUmHDU" target="_blank" rel="noopener">원본 유튜브 영상 열기 ↗</a>
+</header>
+<main>
+<section>
+  <div class="card">
+    <div class="videoWrap">
+      <video id="v" controls playsinline preload="auto"></video>
+      <div id="ytBox"></div>
+      <div id="mask">자막 가림막</div>
+      <div id="empty">
+        <div style="font-size:17px;font-weight:700">영상을 연결해 주세요</div>
+        <div style="font-size:13px;opacity:.85">내 컴퓨터·휴대폰에 있는 영상 파일을 고르면 바로 재생됩니다.<br>(파일은 어디에도 업로드되지 않아요)</div>
+        <div class="row" style="justify-content:center"><button class="primary" onclick="connectYT()">▶ 유튜브 영상 연결</button><button onclick="fileIn.click()">📂 MP4 파일 선택</button></div>
+      </div>
+    </div>
+    <input type="file" id="fileIn" accept="video/mp4,video/*,audio/*" hidden>
+    <div class="row">
+      <button onclick="fileIn.click()">📂 영상 파일 선택/재연결</button>
+      <span id="fileName" style="font-size:13px;color:var(--mute)">연결된 파일 없음</span>
+    </div>
+    <div class="row">
+      <input id="ytUrl" value="https://www.youtube.com/watch?v=9KBIddUmHDU" placeholder="유튜브 주소 붙여넣기" aria-label="유튜브 주소">
+      <button class="navy" onclick="connectYT()">▶ 유튜브 연결</button>
+    </div>
+    <div class="notice" id="ytMsg" style="display:none"></div>
+    <div class="row">
+      <button id="maskBtn" onclick="toggleMask()">▬ 자막 가림막</button>
+      <label>높이 <input type="range" id="maskH" min="5" max="45" value="16" oninput="applyMask()"></label>
+      <label>위치 <input type="range" id="maskB" min="0" max="60" value="12" oninput="applyMask()"></label>
+    </div>
+    <div class="notice">영상 화면에 박혀 있는(번인) 자막은 앱에서 지울 수 없습니다. 필요하면 위 ‘자막 가림막’을 켜고 높이·위치를 맞춰 가려 주세요.</div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div id="now">
+      <div id="nowIdx" style="font-size:13px;color:var(--mute)"></div>
+      <div id="nowSrc"></div>
+      <div id="nowKo"></div>
+      <div id="nowNote"></div>
+    </div>
+    <div id="phases">
+      <span class="ph" data-p="listen">① 원본 듣기</span>
+      <span class="ph" data-p="speak">② 따라 말하기</span>
+      <span class="ph" data-p="again">③ 다시 듣기</span>
+    </div>
+    <div id="bar"><i></i></div>
+    <div id="status">대기 중</div>
+
+    <div class="row" style="justify-content:center;margin-top:10px">
+      <button onclick="step(-1)">⏮ 이전</button>
+      <button class="primary" id="goBtn" onclick="start(S.mode)">▶ 시작</button>
+      <button onclick="start('once')">1회 듣기</button>
+      <button id="pauseBtn" onclick="togglePause()">⏸ 일시정지</button>
+      <button onclick="stopAll()">⏹ 정지</button>
+      <button onclick="step(1)">다음 ⏭</button>
+    </div>
+
+    <div class="row">
+      <label>모드</label>
+      <span class="seg" id="modeSeg">
+        <button data-v="play">듣기</button><button data-v="shadow">쉐도잉 (듣기→따라 말하기→다시 듣기)</button>
+      </span>
+    </div>
+    <div class="row">
+      <label>반복</label>
+      <button id="repBtn" onclick="S.repeatOn=!S.repeatOn;ui()">반복 끔</button>
+      <span class="seg" id="repSeg">
+        <button data-v="3">3회</button><button data-v="5">5회</button><button data-v="Infinity">무한</button>
+      </span>
+      <label><input type="checkbox" id="autoNext" onchange="S.autoNext=this.checked"> 끝나면 다음 문장으로</label>
+    </div>
+    <div class="row">
+      <label>속도</label>
+      <span class="seg" id="rateSeg">
+        <button data-v="0.6">0.6×</button><button data-v="0.75">0.75×</button><button data-v="1">1×</button><button data-v="1.25">1.25×</button>
+      </span>
+      <span style="font-size:12px;color:var(--mute)">음높이 유지</span>
+    </div>
+    <div class="row">
+      <label>따라 말할 시간</label>
+      <label><input type="checkbox" id="waitAuto" checked onchange="S.waitAuto=this.checked;ui()"> 자동(문장 길이×1.5+1초)</label>
+      <input type="range" id="waitSec" min="1" max="20" step="0.5" value="4" oninput="S.waitSec=+this.value;ui()">
+      <b id="waitLbl"></b>
+    </div>
+    <div class="row">
+      <label>자막</label>
+      <button id="srcBtn" onclick="S.showSrc=!S.showSrc;ui()"></button>
+      <button id="koBtn" onclick="S.showKo=!S.showKo;ui()"></button>
+    </div>
+    <div class="row">
+      <label>녹음</label>
+      <button id="recOnBtn" onclick="toggleRecOn()">🎙 따라 말할 때 자동 녹음: 끔</button>
+      <button id="manRecBtn" onclick="manualRec()">● 지금 녹음</button>
+      <button id="myBtn" onclick="playMine()">▶ 내 녹음 듣기</button>
+      <button id="cmpBtn" onclick="compare()">⇄ 원본→내 녹음 비교</button>
+    </div>
+    <audio id="me"></audio>
+  </div>
+</section>
+
+<aside>
+  <div class="card">
+    <h2>문장 목록 <span id="cnt" style="color:var(--mute);font-weight:400"></span></h2>
+    <div class="row">
+      <button onclick="subIn.click()">📄 자막 파일 불러오기 (SRT·VTT·JSON)</button>
+      <button onclick="newSentence()">＋ 현재 위치에 문장 추가</button>
+      <button onclick="toggleEditor()">✏️ 편집</button>
+      <button onclick="exportJson()">💾 저장(JSON)</button>
+    </div>
+    <input type="file" id="subIn" accept=".srt,.vtt,.json,.txt" hidden>
+    <div id="editor" class="card" style="background:var(--bg);margin-bottom:8px">
+      <div class="grid2">
+        <div><label style="font-size:12px">시작(초)</label><input type="number" id="eStart" step="0.05" min="0"><button onclick="eStart.value=P.time().toFixed(2)" style="margin-top:4px;width:100%">현재 위치를 시작으로</button></div>
+        <div><label style="font-size:12px">끝(초)</label><input type="number" id="eEnd" step="0.05" min="0"><button onclick="eEnd.value=P.time().toFixed(2)" style="margin-top:4px;width:100%">현재 위치를 끝으로</button></div>
+      </div>
+      <label style="font-size:12px">원문</label><textarea id="eSrc" placeholder="들리는 대로 원문을 적어 주세요"></textarea>
+      <label style="font-size:12px">한국어 번역</label><textarea id="eKo"></textarea>
+      <label style="font-size:12px">핵심 단어·표현·발음 메모</label><textarea id="eNote"></textarea>
+      <div class="row"><button class="navy" onclick="saveEdit()">저장</button><button onclick="saveEdit(true)">저장 후 구간 듣기</button><button onclick="delSentence()">삭제</button></div>
+      <div style="font-size:12px;color:var(--mute)">편집 창에는 원문·번역이 그대로 보입니다. 연습할 때는 편집 창을 닫아 주세요.</div>
+    </div>
+    <div id="list"></div>
+    <div class="notice" id="guide">
+      <b>처음 사용법</b><br>① 왼쪽에서 유튜브 연결 또는 MP4 파일 연결 → ② 자막 파일(SRT/VTT)을 불러오거나, 영상을 들으며 ‘＋ 현재 위치에 문장 추가’로 구간 지정 → ③ 문장을 누르면 그 구간이 재생됩니다. 만든 목록은 ‘저장(JSON)’으로 보관했다가 다시 불러올 수 있어요.
+    </div>
+  </div>
+</aside>
+</main>
+<div id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const v=$('v'),me=$('me'),fileIn=$('fileIn'),subIn=$('subIn');
+const S={list:[],cur:-1,mode:'shadow',showSrc:true,showKo:true,rate:1,repeatOn:false,repeatN:3,waitAuto:true,waitSec:4,recOn:false,autoNext:false,mask:false};
+const run={id:0,paused:false,phase:'idle'};
+v.preservesPitch=true; v.mozPreservesPitch=true; v.webkitPreservesPitch=true;
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600)}
+function fmt(t){t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1)}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- 영상 파일 연결 ---------- */
+let videoUrl=null;
+fileIn.onchange=()=>{const f=fileIn.files[0];if(!f)return;stopAll();
+  if(videoUrl)URL.revokeObjectURL(videoUrl);videoUrl=URL.createObjectURL(f);
+  dropYT();src='file';v.style.display='block';v.src=videoUrl;v.load();$('empty').style.display='none';$('fileName').textContent='연결됨: '+f.name;fileIn.value='';toast('영상이 연결되었습니다');};
+v.addEventListener('error',()=>{if(v.src)toast('이 파일은 브라우저에서 재생할 수 없습니다. MP4(H.264/AAC) 파일을 선택해 주세요.')});
+function hasVideo(){return src==='yt'?ytReady:(src==='file'&&!!videoUrl)}
+
+/* ---------- 유튜브 연결 (공식 임베드 플레이어) ---------- */
+let src='none',yt=null,ytReady=false,ytTimer=null;
+const YT_ERR={2:'유튜브 주소가 올바르지 않습니다.',5:'이 영상은 임베드 플레이어에서 재생할 수 없습니다.',100:'영상을 찾을 수 없습니다(삭제·비공개).',101:'영상 소유자가 다른 사이트에서의 재생을 막아 두었습니다.',150:'영상 소유자가 다른 사이트에서의 재생을 막아 두었습니다.',153:'파일을 더블클릭으로 연 상태(file://)에서는 유튜브가 재생을 막습니다. 이 파일을 웹 주소(http://localhost 또는 웹 호스팅)로 열어 주세요.'};
+function ytMsg(m){const e=$('ytMsg');e.style.display=m?'block':'none';e.innerHTML=m?('⚠️ '+m+' <b>안 되면 ‘영상 파일 선택/재연결’로 MP4를 연결하세요.</b>'):''}
+function dropYT(){clearTimeout(ytTimer);if(yt){try{yt.destroy()}catch(e){}}yt=null;ytReady=false;$('ytBox').innerHTML='';$('ytBox').style.display='none';ytMsg('');if(src==='yt')src='none'}
+function loadYTApi(){return new Promise((res,rej)=>{if(window.YT&&YT.Player)return res();
+  const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{prev&&prev();res()};
+  if(!document.getElementById('ytApi')){const sc=document.createElement('script');sc.id='ytApi';sc.src='https://www.youtube.com/iframe_api';sc.onerror=()=>{sc.remove();rej()};document.head.appendChild(sc)}
+  setTimeout(rej,10000)})}
+async function connectYT(){
+  const m=$('ytUrl').value.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);
+  if(!m)return toast('유튜브 주소를 확인해 주세요');
+  stopAll();dropYT();ytMsg('');$('fileName').textContent='유튜브 연결 중…';
+  try{await loadYTApi()}catch(e){$('fileName').textContent='연결된 영상 없음';return ytMsg('유튜브 플레이어를 불러오지 못했습니다(네트워크 또는 미리보기 환경에서 차단).')}
+  v.pause();v.style.display='none';$('ytBox').style.display='block';$('ytBox').innerHTML='<div id="ytInner"></div>';$('empty').style.display='none';src='yt';
+  const pv={playsinline:1,rel:0,cc_load_policy:0};if(/^https?:/.test(location.protocol))pv.origin=location.origin;
+  yt=new YT.Player('ytInner',{videoId:m[1],width:'100%',height:'100%',playerVars:pv,events:{
+    onReady:()=>{ytReady=true;clearTimeout(ytTimer);$('fileName').textContent='연결됨: 유튜브 영상';toast('유튜브 영상이 연결되었습니다');ui()},
+    onError:e=>{ytReady=false;clearTimeout(ytTimer);stopAll();$('fileName').textContent='유튜브 재생 불가';ytMsg(YT_ERR[e.data]||('유튜브 재생 오류(코드 '+e.data+').'))}}});
+  ytTimer=setTimeout(()=>{if(!ytReady)ytMsg('유튜브 플레이어가 응답하지 않습니다.')},12000)}
+function ytRate(r){const a=(yt.getAvailablePlaybackRates&&yt.getAvailablePlaybackRates())||[1];return a.reduce((x,y)=>Math.abs(y-r)<Math.abs(x-r)?y:x,a[0])}
+/* 파일·유튜브 공통 재생기 */
+const P={
+  time:()=>src==='yt'&&ytReady?(yt.getCurrentTime()||0):v.currentTime,
+  play:()=>{if(src==='yt'){yt.playVideo();return Promise.resolve()}return v.play()},
+  pause:()=>{if(src==='yt'){if(ytReady)yt.pauseVideo()}else v.pause()},
+  paused:()=>src==='yt'?yt.getPlayerState()!==1:v.paused,
+  ended:()=>src==='yt'?(yt.getPlayerState()===0&&yt.getCurrentTime()>0.5):v.ended,
+  rate:r=>{if(src==='yt'){if(!ytReady)return;const q=ytRate(r);yt.setPlaybackRate(q);if(Math.abs(q-r)>.01)toast('유튜브는 '+r+'배를 지원하지 않아 '+q+'배로 재생합니다 (MP4는 '+r+'배 가능)')}else{v.playbackRate=r;v.preservesPitch=true}},
+  seek:t=>{if(src!=='yt')return seek(t);yt.seekTo(t,true);
+    return new Promise(r=>{const t0=performance.now();const f=()=>{if(Math.abs(yt.getCurrentTime()-t)<0.4||performance.now()-t0>4000)return r();setTimeout(f,30)};setTimeout(f,60)})}
+};
+
+/* ---------- 가림막 ---------- */
+function toggleMask(){S.mask=!S.mask;applyMask()}
+function applyMask(){const m=$('mask');m.style.display=S.mask?'flex':'none';m.style.height=$('maskH').value+'%';m.style.bottom=$('maskB').value+'%';$('maskBtn').classList.toggle('on',S.mask)}
+
+/* ---------- 화면 갱신 ---------- */
+function segSet(id,val){document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===String(val)))}
+function ui(){
+  segSet('modeSeg',S.mode);segSet('repSeg',S.repeatN);segSet('rateSeg',S.rate);
+  $('repBtn').textContent=S.repeatOn?'반복 켬':'반복 끔';$('repBtn').classList.toggle('on',S.repeatOn);
+  $('srcBtn').textContent=S.showSrc?'원문 보임':'원문 숨김';$('srcBtn').classList.toggle('on',S.showSrc);
+  $('koBtn').textContent=S.showKo?'한국어 보임':'한국어 숨김';$('koBtn').classList.toggle('on',S.showKo);
+  $('waitSec').disabled=S.waitAuto;
+  const s=S.list[S.cur];
+  $('waitLbl').textContent=S.waitAuto?(s?waitFor(s).toFixed(1)+'초':'자동'):S.waitSec+'초';
+  $('recOnBtn').textContent='🎙 따라 말할 때 자동 녹음: '+(S.recOn?'켬':'끔');$('recOnBtn').classList.toggle('on',S.recOn);
+  $('goBtn').textContent=S.mode==='shadow'?'▶ 쉐도잉 시작':'▶ 구간 듣기';
+  $('myBtn').disabled=$('cmpBtn').disabled=!(s&&s.recUrl);
+  $('cnt').textContent=S.list.length?'('+S.list.length+'개)':'';
+  $('guide').style.display=S.list.length?'none':'block';
+  // 현재 문장
+  if(!s){$('nowIdx').textContent='';$('nowSrc').innerHTML='<span class="hiddenTxt">문장을 선택하면 여기에 크게 표시됩니다</span>';$('nowKo').textContent='';$('nowNote').style.display='none';}
+  else{
+    $('nowIdx').textContent='문장 '+(S.cur+1)+' / '+S.list.length+' · '+fmt(s.start)+' – '+fmt(s.end);
+    $('nowSrc').innerHTML=S.showSrc?(esc(s.src)||'<span class="hiddenTxt">(원문 미입력)</span>'):'<span class="hiddenTxt">원문 숨김 — 귀로만 들어 보세요</span>';
+    $('nowKo').innerHTML=S.showKo?esc(s.ko):'<span class="hiddenTxt">한국어 숨김</span>';
+    const showNote=S.showSrc&&S.showKo&&s.note;
+    $('nowNote').style.display=(s.note)?'block':'none';
+    $('nowNote').innerHTML=showNote?esc(s.note):'<span class="hiddenTxt" style="font-size:13px">표현 해설·발음 메모는 원문과 한국어를 모두 보이게 하면 나타납니다</span>';
+  }
+  // 목록
+  $('list').innerHTML=S.list.map((x,i)=>'<button class="item'+(i===S.cur?' cur':'')+'" onclick="pick('+i+',true)"><small>'+(i+1)+'. '+fmt(x.start)+' – '+fmt(x.end)+(x.recUrl?' <span class="recDot">● 녹음 있음</span>':'')+'</small>'+
+    '<span class="s">'+(S.showSrc?esc(x.src):'<span class="hiddenTxt" style="font-size:14px">원문 숨김</span>')+'</span>'+
+    (S.showKo&&x.ko?'<br><span class="k">'+esc(x.ko)+'</span>':'')+'</button>').join('');
+  const c=document.querySelector('.item.cur');if(c&&c.scrollIntoView)c.scrollIntoView({block:'nearest'});
+}
+function setPhase(p,msg){run.phase=p;document.querySelectorAll('.ph').forEach(e=>e.classList.toggle('act',e.dataset.p===p));
+  if(p!=='speak')document.querySelector('#bar i').style.width='0';
+  $('status').textContent=msg||({idle:'대기 중',listen:'원본을 잘 들어 보세요',again:'원본을 다시 들으며 비교해 보세요',done:'완료'}[p]||'');
+  $('pauseBtn').textContent=run.paused?'▶ 이어서':'⏸ 일시정지';}
+document.querySelectorAll('.seg').forEach(seg=>seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const val=b.dataset.v;
+  if(seg.id==='modeSeg')S.mode=val;
+  if(seg.id==='repSeg'){S.repeatN=Number(val);S.repeatOn=true}
+  if(seg.id==='rateSeg'){S.rate=Number(val);P.rate(S.rate)}
+  ui()}));
+v.addEventListener('ratechange',()=>{if(Math.abs(v.playbackRate-S.rate)>.001&&run.phase!=='idle')v.playbackRate=S.rate});
+
+/* ---------- 재생 엔진 ---------- */
+function waitFor(s){return S.waitAuto?Math.min(30,(s.end-s.start)*1.5+1):S.waitSec}
+function seek(t){return new Promise(r=>{if(Math.abs(v.currentTime-t)<0.005)return r();let done=false;const f=()=>{if(!done){done=true;r()}};
+  v.addEventListener('seeked',f,{once:true});setTimeout(f,2000);v.currentTime=t})}
+async function playSeg(s,id){
+  P.rate(S.rate);
+  await P.seek(s.start);if(id!==run.id)return false;
+  if(!run.paused){try{await P.play()}catch(e){toast('재생을 시작할 수 없습니다');return false}}
+  return new Promise(res=>{let lastT=-1,lastMove=performance.now();const tick=()=>{
+    if(id!==run.id)return res(false);
+    if(P.time()>=s.end||P.ended()){P.pause();return res(true)}
+    const now=performance.now(),ct=P.time();
+    if(ct!==lastT||run.paused||(src==='yt'&&yt.getPlayerState()===2)){lastT=ct;lastMove=now}
+    else if(now-lastMove>12000){stopAll();if(src==='yt')ytMsg('유튜브 영상이 재생되지 않고 멈춰 있습니다(네트워크·광고·재생 제한 가능).');else toast('영상이 재생되지 않습니다');return res(false)}
+    setTimeout(tick,10)};tick()});
+}
+function wait(sec,id,show){return new Promise(res=>{let left=sec,last=performance.now();const bar=document.querySelector('#bar i');
+  const tick=()=>{if(id!==run.id)return res(false);const n=performance.now();if(!run.paused)left-=(n-last)/1000;last=n;
+    if(show){bar.style.width=Math.max(0,Math.min(100,(1-left/sec)*100))+'%';$('status').textContent='지금 따라 말하세요 · 남은 시간 '+Math.max(0,left).toFixed(1)+'초'+(recording?' · 🎙 녹음 중':'')}
+    if(left<=0)return res(true);setTimeout(tick,40)};tick()})}
+function cycles(mode){return mode==='once'?1:(S.repeatOn?S.repeatN:1)}
+async function start(mode){
+  const s=S.list[S.cur];
+  if(!hasVideo())return toast('먼저 영상(유튜브 또는 MP4)을 연결해 주세요');
+  if(!s)return toast('문장을 먼저 선택하거나 추가해 주세요');
+  stopAll();const id=run.id;
+  for(let i=0;i<cycles(mode);i++){
+    const tot=cycles(mode),tag=tot>1?' ('+(i+1)+'/'+(tot===Infinity?'∞':tot)+'회)':'';
+    setPhase('listen','원본을 잘 들어 보세요'+tag);
+    if(!await playSeg(s,id))return;
+    if(mode==='shadow'){
+      setPhase('speak');
+      if(S.recOn)startRec(s);
+      const ok=await wait(waitFor(s),id,true);stopRec();if(!ok)return;
+      setPhase('again','원본을 다시 들으며 비교해 보세요'+tag);
+      if(!await playSeg(s,id))return;
+    }
+    if(i<cycles(mode)-1&&!await wait(0.5,id,false))return;
+  }
+  setPhase('done');
+  if(S.autoNext&&mode!=='once'&&S.cur<S.list.length-1){S.cur++;ui();start(mode)}
+}
+function stopAll(){run.id++;run.paused=false;P.pause();me.pause();stopRec();setPhase('idle')}
+function togglePause(){if(run.phase==='idle'||run.phase==='done'){if(hasVideo()){P.paused()?P.play():P.pause()}return}
+  run.paused=!run.paused;
+  if(run.paused){P.pause();if(rec&&rec.state==='recording')rec.pause()}
+  else{if(run.phase==='listen'||run.phase==='again')P.play();if(rec&&rec.state==='paused')rec.resume()}
+  $('pauseBtn').textContent=run.paused?'▶ 이어서':'⏸ 일시정지'}
+function pick(i,play){stopAll();S.cur=i;fillEditor();ui();if(play&&hasVideo())start(S.mode)}
+function step(d){if(!S.list.length)return;const i=Math.max(0,Math.min(S.list.length-1,(S.cur<0?0:S.cur+d)));pick(i,true)}
+
+/* ---------- 녹음 ---------- */
+let stream=null,rec=null,recording=false;
+async function getMic(){if(stream)return true;
+  if(!navigator.mediaDevices||!window.MediaRecorder){toast('이 브라우저/환경에서는 녹음을 쓸 수 없습니다');return false}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true});return true}
+  catch(e){toast('마이크 권한이 필요합니다. 미리보기에서 막히면 파일을 내려받아 열어 주세요.');return false}}
+async function toggleRecOn(){if(!S.recOn){if(!await getMic())return;S.recOn=true}else S.recOn=false;ui()}
+function startRec(s){if(!stream)return;const chunks=[];const r=new MediaRecorder(stream);rec=r;recording=true;
+  r.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  r.onstop=()=>{recording=false;if(!chunks.length)return;if(s.recUrl)URL.revokeObjectURL(s.recUrl);s.recUrl=URL.createObjectURL(new Blob(chunks,{type:r.mimeType}));$('manRecBtn').textContent='● 지금 녹음';ui()};
+  r.start()}
+function stopRec(){if(rec&&rec.state!=='inactive')rec.stop()}
+async function manualRec(){const s=S.list[S.cur];if(!s)return toast('문장을 먼저 선택해 주세요');
+  if(recording){stopRec();return}
+  if(!await getMic())return;stopAll();startRec(s);$('manRecBtn').textContent='■ 녹음 끝내기';$('status').textContent='🎙 녹음 중… 다 말했으면 ‘녹음 끝내기’를 누르세요'}
+function playMine(){const s=S.list[S.cur];if(!s||!s.recUrl)return;stopAll();me.src=s.recUrl;me.play();$('status').textContent='내 녹음 재생 중'}
+async function compare(){const s=S.list[S.cur];if(!s||!s.recUrl||!hasVideo())return;stopAll();const id=run.id;
+  setPhase('listen','원본 → 내 녹음 순서로 들려 드립니다');if(!await playSeg(s,id))return;
+  setPhase('idle','내 녹음 재생 중');me.src=s.recUrl;me.play()}
+
+/* ---------- 문장 편집 ---------- */
+function toggleEditor(){const e=$('editor');e.style.display=e.style.display==='block'?'none':'block';fillEditor()}
+function fillEditor(){const s=S.list[S.cur];if(!s)return;$('eStart').value=s.start;$('eEnd').value=s.end;$('eSrc').value=s.src||'';$('eKo').value=s.ko||'';$('eNote').value=s.note||''}
+function newSentence(){const t=+(P.time()||0).toFixed(2);S.list.push({start:t,end:+(t+3).toFixed(2),src:'',ko:'',note:''});sortKeep(S.list[S.list.length-1]);$('editor').style.display='block';fillEditor();ui()}
+function sortKeep(s){S.list.sort((a,b)=>a.start-b.start);S.cur=S.list.indexOf(s)}
+function saveEdit(play){const s=S.list[S.cur];if(!s)return toast('문장을 먼저 선택하거나 추가해 주세요');
+  const a=parseFloat($('eStart').value),b=parseFloat($('eEnd').value);
+  if(!(a>=0)||!(b>a))return toast('끝 시간은 시작 시간보다 커야 합니다');
+  Object.assign(s,{start:a,end:b,src:$('eSrc').value.trim(),ko:$('eKo').value.trim(),note:$('eNote').value.trim()});sortKeep(s);ui();toast('저장했습니다');if(play)start('once')}
+function delSentence(){if(S.cur<0)return;stopAll();S.list.splice(S.cur,1);S.cur=Math.min(S.cur,S.list.length-1);fillEditor();ui()}
+function exportJson(){if(!S.list.length)return toast('저장할 문장이 없습니다');
+  const data=S.list.map(({start,end,src,ko,note})=>({start,end,src,ko,note}));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='shadowing-sentences.json';a.click()}
+
+/* ---------- 자막 불러오기 ---------- */
+function toSec(h,m,s,ms){return (+(h||0))*3600+(+m)*60+(+s)+parseInt(String(ms).padEnd(3,'0'))/1000}
+function parseSubs(txt){txt=txt.replace(/\r/g,'');const out=[];
+  const re=/(?:(\d+):)?(\d{1,2}):(\d{2})[.,](\d{1,3})\s*-->\s*(?:(\d+):)?(\d{1,2}):(\d{2})[.,](\d{1,3})[^\n]*\n([\s\S]*?)(?=\n\s*\n|$)/g;let m;
+  while((m=re.exec(txt))){const text=m[9].replace(/<[^>]+>/g,'').replace(/\{[^}]+\}/g,'').split('\n').map(x=>x.trim()).filter(Boolean).join(' ');
+    if(text)out.push({start:toSec(m[1],m[2],m[3],m[4]),end:toSec(m[5],m[6],m[7],m[8]),src:text,ko:'',note:''})}
+  return out}
+function loadSubsText(txt,name){let arr=[];
+  if(/\.json$/i.test(name)||/^\s*\[/.test(txt)){try{arr=JSON.parse(txt).filter(x=>x&&x.end>x.start).map(x=>({start:+x.start,end:+x.end,src:x.src||'',ko:x.ko||'',note:x.note||''}))}catch(e){return toast('JSON 형식을 읽을 수 없습니다')}}
+  else arr=parseSubs(txt);
+  if(!arr.length)return toast('불러올 문장을 찾지 못했습니다');
+  stopAll();S.list=arr.sort((a,b)=>a.start-b.start);S.cur=0;fillEditor();ui();toast(arr.length+'개 문장을 불러왔습니다. 필요 없는 문장은 편집에서 삭제하세요.')}
+subIn.onchange=async()=>{const f=subIn.files[0];if(!f)return;loadSubsText(await f.text(),f.name);subIn.value=''};
+
+/* ---------- 단축키 ---------- */
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  if(e.code==='Space'){e.preventDefault();togglePause()}
+  if(e.code==='ArrowLeft'&&e.shiftKey)step(-1);
+  if(e.code==='ArrowRight'&&e.shiftKey)step(1);
+  if(e.code==='Enter')start(S.mode)});
+applyMask();ui();setPhase('idle');
+</script>
+</body>
+</html>
